@@ -4,6 +4,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -20,8 +21,9 @@ import (
 // If the command exits, it is restarted
 // The program can be terminated by sending an OS signal (SIGTERM, SIGINT)
 func main() {
-	// File containing commands to run
-	filePath := "commands.txt"
+	// Either use commands.txt or a user specified file
+	filePath := flag.String("f", "commands.txt", "File containing commands to run")
+	flag.Parse()
 
 	// Create a wait group to wait for all processes to finish
 	var wg sync.WaitGroup
@@ -34,7 +36,7 @@ func main() {
 	quitCh := make(chan bool)
 
 	// Start goroutines for each command
-	for _, cmd := range loadCommands(filePath) {
+	for _, cmd := range loadCommands(*filePath) {
 		wg.Add(1)
 		go startProcess(cmd, &wg, quitCh)
 	}
@@ -58,6 +60,8 @@ func main() {
 // Empty lines are ignored
 func loadCommands(filePath string) []string {
 	var commands []string
+
+	fmt.Println(time.Now(), "Opening command list file:", filePath)
 
 	file, err := os.Open(filePath)
 
