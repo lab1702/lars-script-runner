@@ -43,12 +43,12 @@ func main() {
 	<-sigCh
 
 	// Stop all goroutines
-	fmt.Println(time.Now(), " Received termination signal. Telling goroutines to end...")
+	fmt.Println(time.Now(), "Received termination signal. Telling goroutines to end...")
 	close(quitCh)
 
 	wg.Wait() // Wait for ongoing processes to finish before exiting
 
-	fmt.Println(time.Now(), " All goroutines ended.")
+	fmt.Println(time.Now(), "All goroutines ended.")
 
 	os.Exit(0)
 }
@@ -62,7 +62,7 @@ func loadCommands(filePath string) []string {
 	file, err := os.Open(filePath)
 
 	if err != nil {
-		fmt.Println(time.Now(), " Error opening file:", err)
+		fmt.Println(time.Now(), "Error opening file:", err)
 		os.Exit(1)
 	}
 
@@ -79,11 +79,11 @@ func loadCommands(filePath string) []string {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Println(time.Now(), " Error scanning file:", err)
+		fmt.Println(time.Now(), "Error scanning file:", err)
 		os.Exit(1)
 	}
 
-	fmt.Println(time.Now(), " List of commands loaded.")
+	fmt.Println(time.Now(), "List of commands loaded.")
 
 	return commands
 }
@@ -110,7 +110,7 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 			err := process.Start()
 
 			if err != nil {
-				fmt.Println(time.Now(), " Error starting process: ", err)
+				fmt.Println(time.Now(), "Error starting process: ", err)
 				return
 			} else {
 				fmt.Printf("%s Process %s started.\n", time.Now(), cmd)
