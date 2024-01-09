@@ -16,4 +16,8 @@ Edit the **commands.txt** file to contain all the commands you want to have runn
 
     ./lars-script-runner.exe
 
+## To use a command list of a different name and/or location:
+
+    ./lars-script-runner.exe -f /path/to/commands.txt
+
 If not on Windows you'll want to drop the **.exe** part.
