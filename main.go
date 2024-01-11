@@ -147,6 +147,9 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 			} else {
 				fmt.Println(time.Now(), "Process", cmd, "exited successfully - Restarting...")
 			}
+
+			// Wait one second before trying to restart
+			time.Sleep(time.Second)
 		}
 	}
 }
