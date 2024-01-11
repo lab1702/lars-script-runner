@@ -4,6 +4,10 @@ Tiny command line tool that will make sure a list of scripts or other commands a
 
 If one of the commands exits, with or without errors, this tool will wait 1 second before attempting to restart it.
 
+The functionality can most likely be replicated with a small shell or powershell script,
+but I wanted to learn a bit more about [Go](https://go.dev/) and see if it was possible to do something lower level like this with
+no platform specific code at all.
+
 ## How to build and run the example:
 
     git clone https://github.com/lab1702/lars-script-runner.git
