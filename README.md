@@ -4,7 +4,7 @@ Tiny command line tool that will make sure a list of scripts or other commands a
 
 If one of the commands exits, with or without errors, this tool will wait 1 second before attempting to restart it.
 
-## How to build and test:
+## How to build and run the example:
 
     git clone https://github.com/lab1702/lars-script-runner.git
     cd lars-script-runner
