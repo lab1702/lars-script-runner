@@ -2,6 +2,8 @@
 
 Tiny command line tool that will make sure a list of scripts or other commands are always running.
 
+If one of the commands exits, with or without errors, this tool will wait 1 second before attempting to restart it.
+
 ## How to build and test:
 
     git clone https://github.com/lab1702/lars-script-runner.git
