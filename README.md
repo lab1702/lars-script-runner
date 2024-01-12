@@ -19,9 +19,9 @@ If all works, to install do:
 
     go install
 
-## How to configure:
+## How to configure what commands to keep alive:
 
-Edit the **commands.txt** file to contain all the commands you want to have running at all times, putting one command on each line.
+Edit the **[commands.txt](commands.txt)** file to contain all the commands you want to have running at all times, putting one command on each line.
 
 ## To use a command list of a different name and/or location:
 
@@ -29,6 +29,6 @@ Edit the **commands.txt** file to contain all the commands you want to have runn
 
 ## Compatibility:
 
-This was developed on Windows Server 2022 and Ubuntu 22.04 LTS and the example will run as is as on Windows and on Linux if PowerShell is installed.
+This was developed on Windows Server 2022 and Ubuntu 22.04 LTS and the example is tested to run as is as on Windows and on Linux if PowerShell is installed.
 
 The **[commands.txt](commands.txt)** file can contain anything, so you can launch bash scripts, binaries etc.
