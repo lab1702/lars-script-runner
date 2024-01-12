@@ -15,6 +15,10 @@ no platform specific code at all.
     go build
     ./lars-script-runner
 
+If all works, to install do:
+
+    go install
+
 ## How to configure:
 
 Edit the **commands.txt** file to contain all the commands you want to have running at all times, putting one command on each line.
