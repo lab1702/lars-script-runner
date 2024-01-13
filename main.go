@@ -165,9 +165,9 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 
 			// If the process exited with or without an error, make a note of it before looping around to restart it
 			if err != nil {
-				fmt.Println(time.Now(), "process exited:", cmd, "with error:", err)
+				fmt.Println(time.Now(), "process exited:", cmd, "error:", err)
 			} else {
-				fmt.Println(time.Now(), "process exited:", cmd, "successfully")
+				fmt.Println(time.Now(), "process exited:", cmd)
 			}
 		}
 	}
