@@ -167,7 +167,7 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 			if err != nil {
 				fmt.Println(time.Now(), "process exited:", cmd, "with error:", err)
 			} else {
-				fmt.Println(time.Now(), "process exited", cmd, "successfully")
+				fmt.Println(time.Now(), "process exited:", cmd, "successfully")
 			}
 		}
 	}
