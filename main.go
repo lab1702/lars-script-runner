@@ -24,7 +24,7 @@ import (
 // The program can be terminated by sending an OS signal (SIGTERM, SIGINT)
 func main() {
 	// Either use commands.txt or a user specified file
-	filePath := flag.String("f", "commands.txt", "File containing commands to run")
+	filePath := flag.String("f", "commands.txt", "file containing commands to run")
 	flag.Parse()
 
 	// Create a wait group to wait for all goroutines to finish
@@ -32,7 +32,7 @@ func main() {
 
 	// Listen for OS signals to properly terminate goroutines on exit
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	// Create a quit channel to stop goroutines
 	quitCh := make(chan bool)
@@ -44,16 +44,25 @@ func main() {
 	}
 
 	// Wait for termination signals
-	<-sigCh
+	switch <-sigCh {
+	case os.Interrupt:
+		fmt.Println(time.Now(), "received os.Interrupt signal")
+	case syscall.SIGINT:
+		fmt.Println(time.Now(), "received syscall.SIGINT signal")
+	case syscall.SIGTERM:
+		fmt.Println(time.Now(), "received syscall.SIGTERM signal")
+	default:
+		fmt.Println(time.Now(), "received unknown signal")
+	}
 
 	// Tell all goroutines to exit
-	fmt.Println(time.Now(), "Received termination signal. Telling goroutines to end...")
+	fmt.Println(time.Now(), "telling goroutines to end")
 	close(quitCh)
 
 	// Wait for all goroutines to finish
 	wg.Wait()
 
-	fmt.Println(time.Now(), "All goroutines ended.")
+	fmt.Println(time.Now(), "all goroutines ended")
 
 	// Exit the program
 	os.Exit(0)
@@ -65,14 +74,14 @@ func main() {
 func loadCommands(filePath string) []string {
 	var commands []string
 
-	fmt.Println(time.Now(), "Opening command list file:", filePath)
+	fmt.Println(time.Now(), "opening file:", filePath)
 
 	// Open the file
 	file, err := os.Open(filePath)
 
 	// If the file could not be opened, exit the program
 	if err != nil {
-		fmt.Println(time.Now(), "Error opening file:", err)
+		fmt.Println(time.Now(), "failed to open file:", filePath, "error:", err)
 		os.Exit(1)
 	}
 
@@ -93,11 +102,11 @@ func loadCommands(filePath string) []string {
 
 	// If there was an error reading the file, exit the program
 	if err := scanner.Err(); err != nil {
-		fmt.Println(time.Now(), "Error scanning file:", err)
+		fmt.Println(time.Now(), "failed to scan file:", filePath, "error:", err)
 		os.Exit(1)
 	}
 
-	fmt.Println(time.Now(), "List of commands loaded.")
+	fmt.Println(time.Now(), "commands loaded from file:", filePath)
 
 	// Return the list of commands
 	return commands
@@ -122,12 +131,18 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 	// The loop can be exited by sending a value to the quit channel
 	// or if there are any errors starting the command
 	for {
-		// Check if the main function is telling this goroutine to exit
+		// make sure we don't try to restart the command more than once per second
+		<-ticker.C
+
+		// Check if the goroutine is being told to exit.
 		select {
 		case <-quit:
+			fmt.Println(time.Now(), "exiting goroutine for process:", cmd)
 			return
-		// If the goroutine should not exit, continue
 		default:
+			// Print a message that we are starting the command
+			fmt.Println(time.Now(), "starting process:", cmd)
+
 			// Create command execution instance
 			process := exec.Command(command, args...)
 			process.Stdout = os.Stdout
@@ -138,24 +153,22 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 
 			// If the process could not be started, exit the goroutine
 			if err != nil {
-				fmt.Println(time.Now(), "Error starting process: ", err)
+				fmt.Println(time.Now(), "failed to start process:", cmd, "error:", err)
 				return
-			} else {
-				fmt.Println(time.Now(), "Process", cmd, "started.")
 			}
+
+			// Print a message that the process was started
+			fmt.Println(time.Now(), "process started:", cmd)
 
 			// Wait for the process to finish
 			err = process.Wait()
 
 			// If the process exited with or without an error, make a note of it before looping around to restart it
 			if err != nil {
-				fmt.Println(time.Now(), "Process", cmd, "exited with error:", err, "- Restarting...")
+				fmt.Println(time.Now(), "process exited:", cmd, "with error:", err)
 			} else {
-				fmt.Println(time.Now(), "Process", cmd, "exited successfully - Restarting...")
+				fmt.Println(time.Now(), "process exited", cmd, "successfully")
 			}
-
-			// Wait for the ticker to tick before restarting the process
-			<-ticker.C
 		}
 	}
 }

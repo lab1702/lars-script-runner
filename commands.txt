@@ -1,3 +1,4 @@
 powershell ./test1.ps1
 powershell ./test2.ps1
 powershell ./test3.ps1
+nonexisting_command
