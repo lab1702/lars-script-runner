@@ -2,7 +2,7 @@
 
 Tiny command line tool that will make sure a list of scripts or other commands are always running.
 
-If one of the commands exits, with or without errors, this tool will wait 1 second before attempting to restart it.
+If one of the commands exits, with or without errors, this tool will make sure each command is restarted no more often than once per second.
 
 The functionality can most likely be replicated with a small shell or powershell script,
 but I wanted to learn a bit more about [Go](https://go.dev/) and see if it was possible to do something lower level like this with
