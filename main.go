@@ -112,6 +112,12 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 	command := parts[0]
 	args := parts[1:]
 
+	// Create a ticker to only allow one restart attempt per second
+	ticker := time.NewTicker(time.Second)
+
+	// Close the ticker when the function ends
+	defer ticker.Stop()
+
 	// Endless for loop to restart the command if it exits
 	// The loop can be exited by sending a value to the quit channel
 	// or if there are any errors starting the command
@@ -148,8 +154,8 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 				fmt.Println(time.Now(), "Process", cmd, "exited successfully - Restarting...")
 			}
 
-			// Wait one second before trying to restart
-			time.Sleep(time.Second)
+			// Wait for the ticker to tick before restarting the process
+			<-ticker.C
 		}
 	}
 }
