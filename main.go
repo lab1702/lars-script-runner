@@ -7,7 +7,7 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -30,39 +30,48 @@ func main() {
 	// Create a wait group to wait for all goroutines to finish
 	var wg sync.WaitGroup
 
-	// Listen for OS signals to properly terminate goroutines on exit
+	// Create a channel to listen for termination signals
 	sigCh := make(chan os.Signal, 1)
+
+	// Listen for SIGINT and SIGTERM
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	// Create a quit channel to stop goroutines
+	// Create a channel to tell all goroutines to exit
 	quitCh := make(chan bool)
 
 	// Start goroutines for each command
 	for _, cmd := range loadCommands(*filePath) {
+		// Add a goroutine to the wait group
 		wg.Add(1)
+
+		// Start the goroutine
 		go startProcess(cmd, &wg, quitCh)
 	}
 
 	// Wait for termination signals
 	switch <-sigCh {
 	case os.Interrupt:
-		fmt.Println(time.Now(), "received os.Interrupt signal")
+		slog.Info("signal_received", "signal", "os.Interrupt")
 	case syscall.SIGINT:
-		fmt.Println(time.Now(), "received syscall.SIGINT signal")
+		slog.Info("signal_received", "signal", "syscall.SIGINT")
 	case syscall.SIGTERM:
-		fmt.Println(time.Now(), "received syscall.SIGTERM signal")
+		slog.Info("signal_received", "signal", "syscall.SIGTERM")
 	default:
-		fmt.Println(time.Now(), "received unknown signal")
+		slog.Warn("signal_received", "signal", "UNKNOWN")
 	}
 
 	// Tell all goroutines to exit
-	fmt.Println(time.Now(), "telling goroutines to end")
+	slog.Info("closing_quit_channel")
 	close(quitCh)
+
+	// Print a message that we are waiting for all goroutines to finish
+	slog.Info("waiting_goroutines_exit")
 
 	// Wait for all goroutines to finish
 	wg.Wait()
 
-	fmt.Println(time.Now(), "all goroutines ended")
+	// Print a message that all goroutines have finished
+	slog.Info("all_goroutines_exited")
 
 	// Exit the program
 	os.Exit(0)
@@ -74,14 +83,15 @@ func main() {
 func loadCommands(filePath string) []string {
 	var commands []string
 
-	fmt.Println(time.Now(), "opening file:", filePath)
+	// Print a message that we are loading commands from the file
+	slog.Info("loading_commands", "file", filePath)
 
 	// Open the file
 	file, err := os.Open(filePath)
 
 	// If the file could not be opened, exit the program
 	if err != nil {
-		fmt.Println(time.Now(), "failed to open file:", filePath, "error:", err)
+		slog.Error("failed_to_open", "file", filePath, "error", err)
 		os.Exit(1)
 	}
 
@@ -91,22 +101,24 @@ func loadCommands(filePath string) []string {
 	// Read the file line by line
 	scanner := bufio.NewScanner(file)
 
+	// For each line, add the command to the list of commands
 	for scanner.Scan() {
 		cmd := strings.TrimSpace(scanner.Text())
 
-		// Ignore empty lines
-		if cmd != "" {
+		// Ignore empty lines and lines starting with #
+		if cmd != "" && !strings.HasPrefix(cmd, "#") {
 			commands = append(commands, cmd)
 		}
 	}
 
 	// If there was an error reading the file, exit the program
 	if err := scanner.Err(); err != nil {
-		fmt.Println(time.Now(), "failed to scan file:", filePath, "error:", err)
+		slog.Error("failed_to_scan", "file", filePath, "error", err)
 		os.Exit(1)
 	}
 
-	fmt.Println(time.Now(), "commands loaded from file:", filePath)
+	// Print a message that the commands have been loaded from the file
+	slog.Info("commands_loaded", "file", filePath)
 
 	// Return the list of commands
 	return commands
@@ -137,14 +149,16 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 		// Check if the goroutine is being told to exit.
 		select {
 		case <-quit:
-			fmt.Println(time.Now(), "exiting goroutine for process:", cmd)
+			slog.Info("exiting_goroutine", "process", cmd)
 			return
 		default:
 			// Print a message that we are starting the command
-			fmt.Println(time.Now(), "starting process:", cmd)
+			slog.Info("starting_process", "process", cmd)
 
 			// Create command execution instance
 			process := exec.Command(command, args...)
+
+			// Set the standard output and error to the same as the parent process
 			process.Stdout = os.Stdout
 			process.Stderr = os.Stderr
 
@@ -153,21 +167,21 @@ func startProcess(cmd string, wg *sync.WaitGroup, quit <-chan bool) {
 
 			// If the process could not be started, exit the goroutine
 			if err != nil {
-				fmt.Println(time.Now(), "failed to start process:", cmd, "error:", err)
+				slog.Warn("process_failed", "process", cmd, "error", err)
 				return
 			}
 
 			// Print a message that the process was started
-			fmt.Println(time.Now(), "process started:", cmd)
+			slog.Info("process_started", "process", cmd)
 
 			// Wait for the process to finish
 			err = process.Wait()
 
 			// If the process exited with or without an error, make a note of it before looping around to restart it
 			if err != nil {
-				fmt.Println(time.Now(), "process exited:", cmd, "error:", err)
+				slog.Warn("process_exited_error", "process", cmd, "error", err)
 			} else {
-				fmt.Println(time.Now(), "process exited:", cmd)
+				slog.Warn("process_exited_normal", "process", cmd)
 			}
 		}
 	}

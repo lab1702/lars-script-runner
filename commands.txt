@@ -1,4 +1,7 @@
+# Three files that exist
 powershell ./test1.ps1
 powershell ./test2.ps1
 powershell ./test3.ps1
+
+# One file that does not exist
 nonexisting_command
