@@ -8,7 +8,11 @@ The functionality can most likely be replicated with a small shell or powershell
 but I wanted to learn a bit more about [Go](https://go.dev/) and see if it was possible to do something lower level like this with
 no platform specific code at all.
 
-## How to build and run the example:
+## Installation
+
+    go install github.com/lab1702/lars-script-runner@latest
+
+## Downloading source and running the example:
 
     git clone https://github.com/lab1702/lars-script-runner.git
     cd lars-script-runner
