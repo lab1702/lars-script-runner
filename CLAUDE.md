@@ -16,12 +16,28 @@ This is `lars-script-runner`, a simple Go command-line tool that monitors and ke
 - **Install locally**: `go install`
 - **Install from remote**: `go install github.com/lab1702/lars-script-runner@latest`
 
+## Command Line Options
+
+The application supports the following command-line flags:
+
+- `-f string` - file containing commands to run (default "commands.txt")
+- `-dashboard` - enable web dashboard for monitoring
+- `-port int` - web dashboard port (default 8080)
+- `-host string` - web dashboard host (default "localhost")
+- `-grace duration` - graceful shutdown timeout (default 5s)
+- `-restart-delay duration` - delay between process restarts (default 1s)
+- `-max-retries int` - maximum consecutive failures before giving up (0 = unlimited)
+- `-backoff` - enable exponential backoff for failing processes (default true)
+- `-version` - show version information
+
 ## Architecture
 
-The application consists of two main files:
+The application consists of these main files:
 
 - `main.go`: Core process management, configuration, and command handling
 - `dashboard.go`: Web dashboard for monitoring and controlling processes
+- `platform_unix.go`: Unix/Linux/macOS specific syscalls and process management
+- `platform_windows.go`: Windows specific syscalls and process management
 
 ### Key Design Patterns
 
@@ -41,7 +57,12 @@ Commands are specified in `commands.txt` (or custom file via `-f` flag):
 
 ### Cross-Platform Compatibility
 
-The tool is designed to work on Windows, MacOS, and Linux without platform-specific code. The example PowerShell scripts (test1.ps1, test2.ps1, test3.ps1, test4.ps1) demonstrate cross-platform usage when PowerShell is available.
+The tool is designed to work on Windows, macOS, and Linux on both AMD64 and ARM64 architectures. Platform-specific code is isolated in separate files using Go build tags:
+
+- **Unix/Linux/macOS**: Uses `platform_unix.go` with build tag `//go:build !windows`
+- **Windows**: Uses `platform_windows.go` with build tag `//go:build windows`
+
+This approach ensures proper syscall handling across platforms while maintaining a clean separation of concerns. The example PowerShell scripts (test1.ps1, test2.ps1, test3.ps1, test4.ps1) demonstrate cross-platform usage when PowerShell is available.
 
 ## Web Dashboard
 
