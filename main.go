@@ -284,13 +284,7 @@ func (pm *ProcessManager) startProcess(ctx context.Context) error {
 
 // setPlatformProcessAttrs sets platform-specific process attributes
 func (pm *ProcessManager) setPlatformProcessAttrs(cmd *exec.Cmd) {
-	if runtime.GOOS != "windows" {
-		// Unix/Linux/macOS: Set process group for better process management
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Setpgid: true, // Create new process group
-		}
-	}
-	// Windows: No special attributes needed, default behavior is sufficient
+	setPlatformProcessAttrs(cmd)
 }
 
 // terminateProcess attempts to terminate a process gracefully, then forcefully
@@ -418,10 +412,9 @@ func (pm *ProcessManager) forceKillProcess(proc *os.Process) {
 		}
 	} else {
 		// Unix/Linux/macOS: Try to kill process group, fallback to single process
-		pgid, err := syscall.Getpgid(proc.Pid)
-		if err == nil {
+		if pgid, err := getProcessGroupID(proc.Pid); err == nil {
 			// Kill process group (negative PID)
-			if err := syscall.Kill(-pgid, syscall.SIGKILL); err != nil {
+			if err := killProcessGroup(pgid); err != nil {
 				slog.Warn("failed_to_kill_process_group", "process", pm.cmd, "pgid", pgid, "error", err)
 				// Fallback to single process kill
 				if err := proc.Kill(); err != nil {
@@ -722,3 +715,4 @@ func validateConfig(gracePeriod, restartDelay time.Duration, maxRetries, webPort
 
 	return nil
 }
+
