@@ -24,3 +24,4 @@ func getProcessGroupID(pid int) (int, error) {
 func killProcessGroup(pgid int) error {
 	return syscall.Kill(-pgid, syscall.SIGKILL)
 }
+

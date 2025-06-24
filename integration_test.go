@@ -46,7 +46,7 @@ func TestProcessManagerIntegration(t *testing.T) {
 				MaxRetries:     0,
 				BackoffEnabled: true,
 			}
-			pm, err := NewProcessManager(tt.command, config, "test-"+tt.name)
+			pm, err := NewProcessManager(tt.command, config, "test-"+tt.name, nil)
 			if err != nil {
 				t.Fatalf("Failed to create ProcessManager: %v", err)
 			}
@@ -96,7 +96,7 @@ func TestGracefulShutdownWithRunningProcess(t *testing.T) {
 		MaxRetries:     0,
 		BackoffEnabled: true,
 	}
-	pm, err := NewProcessManager("sleep 5", config, "test-timeout")
+	pm, err := NewProcessManager("sleep 5", config, "test-timeout", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestProcessRestartBehavior(t *testing.T) {
 		MaxRetries:     0,
 		BackoffEnabled: true,
 	}
-	pm, err := NewProcessManager("echo restart_test", config, "test-restart")
+	pm, err := NewProcessManager("echo restart_test", config, "test-restart", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -196,7 +196,7 @@ func TestPlatformSpecificBehavior(t *testing.T) {
 		MaxRetries:     0,
 		BackoffEnabled: true,
 	}
-	pm, err := NewProcessManager("sleep 2", config, "test-shutdown")
+	pm, err := NewProcessManager("sleep 2", config, "test-shutdown", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -240,7 +240,7 @@ func TestSignalHandlingIntegration(t *testing.T) {
 		MaxRetries:     0,
 		BackoffEnabled: true,
 	}
-	pm, err := NewProcessManager("sleep 10", config, "test-context")
+	pm, err := NewProcessManager("sleep 10", config, "test-context", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -295,7 +295,7 @@ func TestConcurrentProcessManagers(t *testing.T) {
 			MaxRetries:     0,
 			BackoffEnabled: true,
 		}
-		pm, err := NewProcessManager(cmd, config, fmt.Sprintf("concurrent-%d", i))
+		pm, err := NewProcessManager(cmd, config, fmt.Sprintf("concurrent-%d", i), nil)
 		if err != nil {
 			t.Fatalf("Failed to create ProcessManager %d: %v", i, err)
 		}
@@ -374,7 +374,7 @@ echo "Integration test complete"`
 		BackoffEnabled: true,
 	}
 	for i, cmd := range commands {
-		pm, err := NewProcessManager(cmd, config, fmt.Sprintf("bench-%d", i))
+		pm, err := NewProcessManager(cmd, config, fmt.Sprintf("bench-%d", i), nil)
 		if err != nil {
 			t.Errorf("Failed to create ProcessManager for command %d (%q): %v", i, cmd, err)
 		}
@@ -392,7 +392,7 @@ func BenchmarkProcessManagerStart(b *testing.B) {
 		MaxRetries:     0,
 		BackoffEnabled: true,
 	}
-	pm, err := NewProcessManager("echo benchmark", config, "benchmark")
+	pm, err := NewProcessManager("echo benchmark", config, "benchmark", nil)
 	if err != nil {
 		b.Fatalf("Failed to create ProcessManager: %v", err)
 	}

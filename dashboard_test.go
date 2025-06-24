@@ -31,8 +31,8 @@ func TestNewDashboardManager(t *testing.T) {
 		t.Error("Processes map not initialized")
 	}
 
-	if dm.clients == nil {
-		t.Error("Clients map not initialized")
+	if dm.stopUpdates == nil {
+		t.Error("stopUpdates channel not initialized")
 	}
 }
 
@@ -49,7 +49,7 @@ func TestDashboardProcessRegistration(t *testing.T) {
 
 	dm := NewDashboardManager(config)
 
-	pm, err := NewProcessManager("echo test", config, "test-process")
+	pm, err := NewProcessManager("echo test", config, "test-process", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestDashboardHandlers(t *testing.T) {
 	// Test processes API endpoint
 	t.Run("processes API", func(t *testing.T) {
 		// Add a test process
-		pm, err := NewProcessManager("echo test", config, "test-process")
+		pm, err := NewProcessManager("echo test", config, "test-process", nil)
 		if err != nil {
 			t.Fatalf("Failed to create ProcessManager: %v", err)
 		}
@@ -222,8 +222,8 @@ func TestStaticFiles(t *testing.T) {
 		contentType string
 		shouldExist bool
 	}{
-		{"/static/style.css", "text/css", true},
-		{"/static/script.js", "application/javascript", true},
+		{"/static/style.css", "text/css; charset=utf-8", true},
+		{"/static/script.js", "application/javascript; charset=utf-8", true},
 		{"/static/nonexistent.txt", "", false},
 	}
 
@@ -265,7 +265,7 @@ func TestProcessStats(t *testing.T) {
 		BackoffEnabled: true,
 	}
 
-	pm, err := NewProcessManager("echo test", config, "test-process")
+	pm, err := NewProcessManager("echo test", config, "test-process", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -329,7 +329,7 @@ func BenchmarkDashboardHandlers(b *testing.B) {
 
 	// Add some test processes
 	for i := 0; i < 10; i++ {
-		pm, _ := NewProcessManager(fmt.Sprintf("echo test%d", i), config, fmt.Sprintf("proc_%d", i))
+		pm, _ := NewProcessManager(fmt.Sprintf("echo test%d", i), config, fmt.Sprintf("proc_%d", i), nil)
 		dm.RegisterProcess(pm)
 	}
 

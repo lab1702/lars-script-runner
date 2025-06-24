@@ -14,11 +14,11 @@ import (
 
 // DashboardManager manages the web dashboard and process monitoring
 type DashboardManager struct {
-	processes    map[string]*ProcessManager
-	mutex        sync.RWMutex
-	server       *http.Server
-	config       *Config
-	stopUpdates  chan bool
+	processes   map[string]*ProcessManager
+	mutex       sync.RWMutex
+	server      *http.Server
+	config      *Config
+	stopUpdates chan bool
 }
 
 // NewDashboardManager creates a new dashboard manager
@@ -171,7 +171,7 @@ func (dm *DashboardManager) handleProcesses(w http.ResponseWriter, r *http.Reque
 // handleProcess returns details for a specific process
 func (dm *DashboardManager) handleProcess(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/process/"):]
-	
+
 	// Validate process ID format (security: prevent path traversal)
 	if len(id) == 0 || len(id) > 50 || strings.ContainsAny(id, "../\\?*|<>:") {
 		http.Error(w, "Invalid process ID", http.StatusBadRequest)
@@ -216,7 +216,7 @@ func (dm *DashboardManager) handleRestart(w http.ResponseWriter, r *http.Request
 	}
 
 	id := r.URL.Path[len("/api/restart/"):]
-	
+
 	// Validate process ID format (security: prevent path traversal)
 	if len(id) == 0 || len(id) > 50 || strings.ContainsAny(id, "../\\?*|<>:") {
 		http.Error(w, "Invalid process ID", http.StatusBadRequest)
@@ -248,23 +248,10 @@ func (dm *DashboardManager) handleRestart(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// handleWebSocket handles WebSocket connections for real-time updates
-func (dm *DashboardManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	// Disable WebSocket for now - use HTTP polling instead
-	http.Error(w, "WebSocket temporarily disabled - use HTTP polling", http.StatusServiceUnavailable)
-}
-
-
-
-// BroadcastUpdate sends updates to all connected WebSocket clients (disabled)
-func (dm *DashboardManager) BroadcastUpdate() {
-	// WebSocket functionality disabled - clients will use HTTP polling
-}
-
 // handleStatic serves static files (CSS, JS, etc.)
 func (dm *DashboardManager) handleStatic(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[len("/static/"):]
-	
+
 	// Security: validate path to prevent directory traversal
 	if strings.Contains(path, "..") || strings.Contains(path, "/") || strings.Contains(path, "\\") {
 		http.Error(w, "Invalid path", http.StatusBadRequest)

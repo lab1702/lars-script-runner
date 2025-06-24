@@ -287,7 +287,7 @@ func TestNewProcessManager(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pm, err := NewProcessManager(tt.command, tt.config, tt.name)
+			pm, err := NewProcessManager(tt.command, tt.config, tt.name, nil)
 
 			if tt.expectError {
 				if err == nil {
@@ -346,7 +346,7 @@ func TestProcessManagerPlatformAttributes(t *testing.T) {
 		MaxRetries:     0,
 		BackoffEnabled: true,
 	}
-	pm, err := NewProcessManager("echo test", config, "test-platform")
+	pm, err := NewProcessManager("echo test", config, "test-platform", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -391,7 +391,7 @@ func TestProcessManagerConcurrency(t *testing.T) {
 		MaxRetries:     0,
 		BackoffEnabled: true,
 	}
-	pm, err := NewProcessManager("sleep 0.1", config, "test-concurrency")
+	pm, err := NewProcessManager("sleep 0.1", config, "test-concurrency", nil)
 	if err != nil {
 		t.Fatalf("Failed to create ProcessManager: %v", err)
 	}
@@ -439,7 +439,7 @@ func BenchmarkNewProcessManager(b *testing.B) {
 			MaxRetries:     0,
 			BackoffEnabled: true,
 		}
-		pm, _ := NewProcessManager("echo test", config, "benchmark")
+		pm, _ := NewProcessManager("echo test", config, "benchmark", nil)
 		_ = pm
 	}
 }

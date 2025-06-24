@@ -25,3 +25,4 @@ func getProcessGroupID(pid int) (int, error) {
 func killProcessGroup(pgid int) error {
 	return fmt.Errorf("process groups not supported on Windows")
 }
+

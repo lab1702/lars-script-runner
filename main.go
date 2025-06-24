@@ -29,7 +29,7 @@ import (
 const (
 	// Application version
 	Version = "1.0.0"
-	
+
 	// Default configuration values
 	DefaultRestartInterval = time.Second
 	DefaultGracePeriod     = 5 * time.Second
@@ -343,7 +343,7 @@ func (pm *ProcessManager) terminateProcess(proc *os.Process) {
 		// Force kill if graceful shutdown times out
 		slog.Warn("force_killing_process_after_timeout", "process", pm.cmd, "pid", proc.Pid, "timeout", gracePeriod)
 		pm.forceKillProcess(proc)
-		
+
 		// Give a brief moment for the force kill to take effect
 		time.Sleep(100 * time.Millisecond)
 		slog.Info("process_force_killed", "process", pm.cmd)
@@ -715,4 +715,3 @@ func validateConfig(gracePeriod, restartDelay time.Duration, maxRetries, webPort
 
 	return nil
 }
-
