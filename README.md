@@ -9,7 +9,7 @@ but I wanted to learn a bit more about [Go](https://go.dev/) and create a cross-
 
 ## Installation
 
-    go install github.com/lab1702/lars-script-runner@latest
+    go install github.com/lab1702/lars-script-runner@v2.0.0
 
 ## Downloading source and running the example:
 

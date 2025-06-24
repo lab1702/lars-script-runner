@@ -14,7 +14,7 @@ This is `lars-script-runner`, a simple Go command-line tool that monitors and ke
 - **Run with web dashboard**: `./lars-script-runner -dashboard -port 8080`
 - **Show version**: `./lars-script-runner -version`
 - **Install locally**: `go install`
-- **Install from remote**: `go install github.com/lab1702/lars-script-runner@latest`
+- **Install from remote**: `go install github.com/lab1702/lars-script-runner@v2.0.0`
 
 ## Command Line Options
 
