@@ -57,9 +57,4 @@ Features:
 
 This tool runs on **Linux**, **Windows**, and **macOS** on both **AMD64** and **ARM64** architectures.
 
-Developed and tested on:
-- Windows Server 2022
-- Ubuntu 22.04 LTS  
-- macOS (Intel and Apple Silicon)
-
 The **[commands.txt](commands.txt)** file can contain any executable commands - bash scripts, PowerShell scripts, binaries, etc.
