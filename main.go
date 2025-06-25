@@ -299,7 +299,7 @@ func (pm *ProcessManager) terminateProcess(proc *os.Process) {
 		slog.Debug("using_shorter_grace_period_for_powershell", "process", pm.cmd, "grace_period", gracePeriod)
 	}
 
-	// Try graceful shutdown first
+	// Try graceful shutdown first - for Unix systems, terminate the process group
 	if err := pm.sendTerminationSignal(proc); err != nil {
 		slog.Warn("failed_to_send_termination_signal", "process", pm.cmd, "error", err)
 		// Fall back to force kill immediately
@@ -370,12 +370,30 @@ func (pm *ProcessManager) sendTerminationSignal(proc *os.Process) error {
 		slog.Debug("windows_timeout_based_termination", "process", pm.cmd, "pid", proc.Pid)
 		return nil
 	} else {
-		// Unix/Linux/macOS: Send SIGTERM for graceful shutdown
-		err := proc.Signal(syscall.SIGTERM)
-		if err != nil {
-			slog.Warn("failed_to_send_sigterm", "process", pm.cmd, "pid", proc.Pid, "error", err)
+		// Unix/Linux/macOS: Send SIGTERM to process group for graceful shutdown
+		if pgid, err := getProcessGroupID(proc.Pid); err == nil {
+			// Send SIGTERM to process group (negative PID)
+			err := syscall.Kill(-pgid, syscall.SIGTERM)
+			if err != nil {
+				slog.Warn("failed_to_send_sigterm_to_group", "process", pm.cmd, "pgid", pgid, "error", err)
+				// Fallback to single process
+				err = proc.Signal(syscall.SIGTERM)
+				if err != nil {
+					slog.Warn("failed_to_send_sigterm", "process", pm.cmd, "pid", proc.Pid, "error", err)
+				}
+				return err
+			}
+			slog.Debug("sent_sigterm_to_process_group", "process", pm.cmd, "pgid", pgid)
+			return nil
+		} else {
+			// Fallback to single process if we can't get process group
+			slog.Debug("no_process_group_sending_sigterm_to_process", "process", pm.cmd, "pid", proc.Pid)
+			err := proc.Signal(syscall.SIGTERM)
+			if err != nil {
+				slog.Warn("failed_to_send_sigterm", "process", pm.cmd, "pid", proc.Pid, "error", err)
+			}
+			return err
 		}
-		return err
 	}
 }
 
