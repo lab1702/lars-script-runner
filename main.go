@@ -28,7 +28,7 @@ import (
 // Constants for configuration and limits
 const (
 	// Application version
-	Version = "1.2.0"
+	Version = "1.3.0"
 
 	// Default configuration values
 	DefaultRestartInterval = time.Second
@@ -254,8 +254,40 @@ func (pm *ProcessManager) startProcess(ctx context.Context) error {
 
 	slog.Info("process_started", "process", pm.cmd, "pid", cmd.Process.Pid)
 
-	// Wait for process to complete
-	err := cmd.Wait()
+	// Wait for process to complete or context cancellation
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	var err error
+	select {
+	case err = <-done:
+		// Process completed normally
+	case <-ctx.Done():
+		// Context was cancelled, we need to ensure the process is terminated
+		slog.Info("context_cancelled_terminating_process", "process", pm.cmd, "pid", cmd.Process.Pid)
+		
+		// Try graceful termination first
+		if pm.sendTerminationSignal(cmd.Process) != nil {
+			// If graceful termination fails, force kill immediately
+			pm.forceKillProcess(cmd.Process)
+		} else {
+			// Give a brief moment for graceful termination
+			select {
+			case err = <-done:
+				// Process terminated gracefully
+				slog.Debug("process_terminated_gracefully_after_signal", "process", pm.cmd)
+			case <-time.After(1 * time.Second):
+				// Force kill if it doesn't terminate quickly
+				slog.Info("force_killing_after_graceful_timeout", "process", pm.cmd, "pid", cmd.Process.Pid)
+				pm.forceKillProcess(cmd.Process)
+				// Wait for the kill to complete
+				<-done
+			}
+		}
+		err = ctx.Err()
+	}
 
 	// Clear process reference and update stats atomically
 	pm.procMutex.Lock()
@@ -542,6 +574,7 @@ func main() {
 	}
 
 	// Start process managers with graceful shutdown support
+	var processManagers []*ProcessManager
 	validProcesses := 0
 	for i, cmd := range commands {
 		processID := fmt.Sprintf("process_%d", i)
@@ -555,6 +588,9 @@ func main() {
 		if dashboardMgr != nil {
 			dashboardMgr.RegisterProcess(pm)
 		}
+
+		// Keep track of all process managers for cleanup
+		processManagers = append(processManagers, pm)
 
 		wg.Add(1)
 		go pm.Start(ctx, &wg)
@@ -583,6 +619,22 @@ func main() {
 	slog.Info("initiating_graceful_shutdown")
 	cancel()
 
+	// Set up a second signal handler for force shutdown
+	go func() {
+		sig := <-sigCh
+		slog.Warn("second_signal_received_force_killing", "signal", sig)
+		// Force kill all processes immediately
+		for _, pm := range processManagers {
+			pm.procMutex.RLock()
+			if pm.currentProc != nil {
+				slog.Info("force_killing_process_immediate", "process", pm.cmd, "pid", pm.currentProc.Pid)
+				pm.forceKillProcess(pm.currentProc)
+			}
+			pm.procMutex.RUnlock()
+		}
+		os.Exit(1)
+	}()
+
 	// Stop dashboard server if running
 	if dashboardMgr != nil {
 		if err := dashboardMgr.Stop(); err != nil {
@@ -602,7 +654,18 @@ func main() {
 	case <-done:
 		slog.Info("all_processes_shutdown_gracefully")
 	case <-time.After(shutdownTimeout):
-		slog.Warn("shutdown_timeout_exceeded", "timeout", shutdownTimeout)
+		slog.Warn("shutdown_timeout_exceeded_force_killing", "timeout", shutdownTimeout)
+		// Force kill all remaining processes
+		for _, pm := range processManagers {
+			pm.procMutex.RLock()
+			if pm.currentProc != nil {
+				slog.Info("force_killing_remaining_process", "process", pm.cmd, "pid", pm.currentProc.Pid)
+				pm.forceKillProcess(pm.currentProc)
+			}
+			pm.procMutex.RUnlock()
+		}
+		// Give a moment for force kills to take effect
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	slog.Info("shutdown_complete")
