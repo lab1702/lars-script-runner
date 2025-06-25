@@ -4,7 +4,10 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 )
 
@@ -24,5 +27,24 @@ func getProcessGroupID(pid int) (int, error) {
 // killProcessGroup kills a process group by PGID (not supported on Windows)
 func killProcessGroup(pgid int) error {
 	return fmt.Errorf("process groups not supported on Windows")
+}
+
+// sendPlatformTerminationSignal sends platform-specific termination signal
+func sendPlatformTerminationSignal(proc *os.Process, cmd string) error {
+	// Windows: Check if process is still running before attempting termination
+	if err := proc.Signal(syscall.Signal(0)); err != nil {
+		return nil // Process already terminated
+	}
+
+	// For PowerShell processes on Windows, force kill immediately
+	// as they don't handle graceful termination well
+	if strings.Contains(strings.ToLower(cmd), "powershell") || strings.Contains(strings.ToLower(cmd), "pwsh") {
+		slog.Debug("powershell_force_kill_on_windows", "process", cmd, "pid", proc.Pid)
+		return fmt.Errorf("force killed powershell process")
+	}
+
+	// For other Windows processes, use timeout-based termination
+	slog.Debug("windows_timeout_based_termination", "process", cmd, "pid", proc.Pid)
+	return nil
 }
 

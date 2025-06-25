@@ -384,49 +384,12 @@ func (pm *ProcessManager) terminateProcess(proc *os.Process) {
 
 // sendTerminationSignal sends a platform-appropriate termination signal
 func (pm *ProcessManager) sendTerminationSignal(proc *os.Process) error {
-	if runtime.GOOS == "windows" {
-		// Windows: Check if process is still running before attempting termination
-		if !pm.isProcessRunning(proc) {
-			return nil // Process already terminated
-		}
-
-		// For PowerShell processes on Windows, force kill immediately
-		// as they don't handle graceful termination well
-		if strings.Contains(strings.ToLower(pm.cmd), "powershell") || strings.Contains(strings.ToLower(pm.cmd), "pwsh") {
-			slog.Debug("powershell_force_kill_on_windows", "process", pm.cmd, "pid", proc.Pid)
-			pm.forceKillProcess(proc)
-			return fmt.Errorf("force killed powershell process")
-		}
-
-		// For other Windows processes, use timeout-based termination
-		slog.Debug("windows_timeout_based_termination", "process", pm.cmd, "pid", proc.Pid)
-		return nil
-	} else {
-		// Unix/Linux/macOS: Send SIGTERM to process group for graceful shutdown
-		if pgid, err := getProcessGroupID(proc.Pid); err == nil {
-			// Send SIGTERM to process group (negative PID)
-			err := syscall.Kill(-pgid, syscall.SIGTERM)
-			if err != nil {
-				slog.Warn("failed_to_send_sigterm_to_group", "process", pm.cmd, "pgid", pgid, "error", err)
-				// Fallback to single process
-				err = proc.Signal(syscall.SIGTERM)
-				if err != nil {
-					slog.Warn("failed_to_send_sigterm", "process", pm.cmd, "pid", proc.Pid, "error", err)
-				}
-				return err
-			}
-			slog.Debug("sent_sigterm_to_process_group", "process", pm.cmd, "pgid", pgid)
-			return nil
-		} else {
-			// Fallback to single process if we can't get process group
-			slog.Debug("no_process_group_sending_sigterm_to_process", "process", pm.cmd, "pid", proc.Pid)
-			err := proc.Signal(syscall.SIGTERM)
-			if err != nil {
-				slog.Warn("failed_to_send_sigterm", "process", pm.cmd, "pid", proc.Pid, "error", err)
-			}
-			return err
-		}
+	err := sendPlatformTerminationSignal(proc, pm.cmd)
+	if err != nil && strings.Contains(err.Error(), "force killed powershell process") {
+		// PowerShell was force killed, so we need to call forceKillProcess
+		pm.forceKillProcess(proc)
 	}
+	return err
 }
 
 // isProcessRunning checks if a process is still running (cross-platform)
